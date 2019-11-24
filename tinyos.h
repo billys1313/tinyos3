@@ -546,8 +546,6 @@ typedef struct pipe_control_block{
   int read_bytes;     
   int written_bytes;
 
-  int read_index;
-  int write_index;
 
   CondVar has_space;    //cond var for writer
   CondVar has_data;     //condvar for reader

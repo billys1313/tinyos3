@@ -49,8 +49,6 @@ int sys_Pipe(pipe_t* pipe)
 	pipe_cb -> fcb_w= fcb[0];
 	pipe_cb -> fcb_r= fcb[1];
 
-	pipe_cb -> read_index=0;
-	pipe_cb -> write_index=0;
 
 	pipe_cb -> read_bytes=0;
 	pipe_cb -> written_bytes=0;
@@ -83,11 +81,10 @@ int pipe_read(void* reader,char* buffer,unsigned int size){
 
 	int available_bytes= pipe_cb->written_bytes - pipe_cb->read_bytes;	// available bytes to read
 
-	int actual_size=size;	//initialized at size of user
-	int read_bytes=0;	//how many bytes have we read from buffer
+	
 
 
-	int until;		//how many bytes cam we read
+	int until;		//how many bytes can we read
 
 	if(pipe_cb->fcb_r==NULL )  //cant read without reader!
 		return -1;
@@ -103,34 +100,21 @@ int pipe_read(void* reader,char* buffer,unsigned int size){
 	}
 
 	//start reading...
-	while(actual_size>0 && available_bytes>0){
+	
+	until = (size <= available_bytes) ? size : available_bytes;
 
-		until = (actual_size <= available_bytes) ? actual_size : available_bytes;
+	for (int i = 0; i < until; ++i){
 
-		for (int i = 0; i < until; ++i){
+		buffer[i] = pipe_cb -> buffer [pipe_cb -> read_bytes % PIPE_BUFFER_SIZE]; //cycle
+		pipe_cb -> read_bytes ++;
 
-			if (pipe_cb -> read_index < PIPE_BUFFER_SIZE){
-
-				buffer[i+read_bytes] = pipe_cb -> buffer [pipe_cb -> read_index];
-			}
-			else {
-				pipe_cb -> read_index =0;			//cycle
-				buffer[i+read_bytes]= pipe_cb -> buffer[pipe_cb -> read_index];
-			}
-			pipe_cb -> read_index ++;
-			pipe_cb -> read_bytes ++;
-
-			
-		}
-		kernel_broadcast(&pipe_cb -> has_space);
-		read_bytes += until;
-		available_bytes -= until;
-		actual_size -= until;
-
+		
 	}
+	kernel_broadcast(&pipe_cb -> has_space);
+	//available_bytes -= until;
+	
 
-
-	return size - actual_size;
+	return until;
 }
 //pipe_read will write input buffer to pipe_cb->buffer
 //on success returns the number of bytes copied 
@@ -139,9 +123,6 @@ int pipe_write(void* writer,const char* buffer,unsigned int size){
 	PIPE_CB* pipe_cb = (PIPE_CB*) writer;
 
 	int free_bytes= PIPE_BUFFER_SIZE -(pipe_cb->written_bytes - pipe_cb->read_bytes);	// free space
-
-	int actual_size=size;	//initialized at size of user
-	int written_bytes=0;	//how many bytes have we written to the buffer
 
 
 	int until;		//how many bytes cam we read
@@ -157,30 +138,19 @@ int pipe_write(void* writer,const char* buffer,unsigned int size){
 
 	}
 
-	while(actual_size>0 && free_bytes>0){
+	until=(size <= free_bytes )? size : free_bytes;
 
-		until=(actual_size <= free_bytes )? actual_size : free_bytes;
+	for (int i = 0; i < until; ++i){
 
-		for (int i = 0; i < until; ++i){
 
-			if(pipe_cb -> write_index < PIPE_BUFFER_SIZE){
-				pipe_cb -> buffer[pipe_cb -> write_index] = buffer[i+written_bytes];
-			}else{
-				pipe_cb -> write_index=0;
-				pipe_cb -> buffer[pipe_cb -> write_index] = buffer[i+written_bytes];
-			}
-			pipe_cb -> write_index++;
-			pipe_cb -> written_bytes++;
-			
-		}
-		kernel_broadcast(&pipe_cb -> has_data);
-		written_bytes += until;
-		free_bytes -= until;
-		actual_size -= until;
-
+		pipe_cb -> buffer[pipe_cb -> written_bytes % PIPE_BUFFER_SIZE] = buffer[i];
+		pipe_cb -> written_bytes++;
+		
 	}
-
-	return size - actual_size;
+	kernel_broadcast(&pipe_cb -> has_data);
+	
+	
+	return until;
 
 }
 
@@ -192,7 +162,6 @@ int close_pipe_reader(void* fid){
 
 	if(pipe_cb -> fcb_w == NULL){
 		free(pipe_cb);
-		pipe_cb = NULL;
 		return 0;
 	}
 	else{
@@ -210,7 +179,6 @@ int close_pipe_writer(void* fid){
 
 	if(pipe_cb -> fcb_r == NULL){
 		free(pipe_cb);
-		pipe_cb = NULL;
 		return 0;
 	}
 	else{
