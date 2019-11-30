@@ -1,10 +1,44 @@
 
 #include "tinyos.h"
-
+#include "kernel_socket.h"
 
 Fid_t sys_Socket(port_t port)
-{
-	return NOFILE;
+{	
+	//illegal port...
+	if (port < 0 || port > MAX_PORT) { 
+		
+		return NOFILE;
+	}
+
+
+	if (port !=0 && PORT_MAP[port] != NULL ){ //this port is already in use
+		return NOFILE;
+	}
+	Fid_t fid = -1;
+	FCB* fcb = NULL;
+	
+	if (FCB_reserve(1, &fid, &fcb)==0) // file ids of curproc are exhausted.
+		return NOFILE;
+
+
+	SOCKET_CB* socket_cb = (SOCKET_CB*)xmalloc(sizeof(SOCKET_CB)); //streamobj
+	socket_cb -> fcb = fcb;
+	socket_cb -> fid = fid;
+	socket_cb -> stype = UNBOUND;
+	socket_cb -> port = port;
+
+	fcb -> streamobj = socket_cb;
+	fcb -> streamfunc = &UNBOUND_FOPS;
+
+	//Bound socket to the port
+	if(port != NOPORT){
+		PORT_MAP[port] = socket_cb;
+	}
+
+	return fid;
+
+	
+
 }
 
 int sys_Listen(Fid_t sock)
@@ -30,3 +64,12 @@ int sys_ShutDown(Fid_t sock, shutdown_mode how)
 	return -1;
 }
 
+int socket_read(void* read,char*buffer , unsigned int size){
+	return -1;
+}
+int socket_write(void* write,const char*buffer , unsigned int size){
+	return -1;
+}
+int socket_close(void* fid){
+	return -1;
+}

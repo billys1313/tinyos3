@@ -125,7 +125,7 @@ int pipe_write(void* writer,const char* buffer,unsigned int size){
 	int free_bytes= PIPE_BUFFER_SIZE -(pipe_cb->written_bytes - pipe_cb->read_bytes);	// free space
 
 
-	int until;		//how many bytes cam we read
+	int until;		//how many bytes can we read
 
 	if(pipe_cb->fcb_r==NULL || pipe_cb->fcb_w==NULL)  
 		return -1;
