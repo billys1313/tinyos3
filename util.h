@@ -315,7 +315,7 @@ typedef struct resource_list_node {
     PCB* pcb;
     /*EDITS.........*/ 
     PTCB* ptcb; 
-    socket_request* socket_request
+    socket_request* socket_request;
     TCB* tcb;
     CCB* ccb;
     DCB* dcb;
