@@ -11,9 +11,6 @@ Fid_t sys_Socket(port_t port)
 	}
 
 
-	if (port !=0 && PORT_MAP[port] != NULL ){ //this port is already in use
-		return NOFILE;
-	}
 	Fid_t fid = -1;
 	FCB* fcb = NULL;
 	
@@ -28,17 +25,9 @@ Fid_t sys_Socket(port_t port)
 	socket_cb -> port = port;
 
 	fcb -> streamobj = socket_cb;
-	fcb -> streamfunc = &UNBOUND_FOPS;
-
-	//Bound socket to the port
-	if(port != NOPORT){
-		PORT_MAP[port] = socket_cb;
-	}
+	fcb -> streamfunc = &SOCKET_FOPS;
 
 	return fid;
-
-	
-
 }
 
 int sys_Listen(Fid_t sock)
