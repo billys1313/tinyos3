@@ -1260,7 +1260,7 @@ void check_transfer(Fid_t from, Fid_t to)
 {
 	char buffer[12] = {[0]=0};
 	int rc;
-	ASSERT((rc=Write(from,"Hello world", 12))==12);
+	ASSERT((rc=Write(from,"Hello world", 12))==12); 
 	ASSERT((rc=Read(to, buffer, 12))==12);
 	ASSERT((rc=strcmp("Hello world", buffer))==0);
 }

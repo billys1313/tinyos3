@@ -216,8 +216,7 @@ int sys_Connect(Fid_t sock, port_t port, timeout_t timeout)
 	if(socket_cb -> stype != UNBOUND || PORT_MAP[port] == NULL)
 		return -1;
 
-	if(socket_cb -> port != port) // must be bounded to the same port
-		return -1;
+	
 
 	SOCKET_CB* listener_sock = PORT_MAP[port];
 
@@ -327,8 +326,7 @@ int socket_close(void* fid){
 			socket_cb -> peer.socket = NULL ;
 
 		}
-		socket_cb -> stype  = UNBOUND;
-
+		
 		
 	}
 	else if (socket_cb ->stype == LISTENER){
@@ -339,7 +337,7 @@ int socket_close(void* fid){
 		}
 		
 		PORT_MAP[socket_cb -> port]= NULL;
-		socket_cb -> stype  = UNBOUND;
+		
 	}
 
 	if (socket_cb -> refcount ==0){
