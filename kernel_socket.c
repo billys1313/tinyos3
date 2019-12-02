@@ -32,7 +32,7 @@ Fid_t sys_Socket(port_t port)
 	socket_cb -> stype = UNBOUND;
 	socket_cb -> port = port;
 
-	
+	socket_cb -> refcount =0;
 
 
 	fcb -> streamobj = socket_cb;
@@ -71,6 +71,8 @@ int sys_Listen(Fid_t sock)
 
 	PORT_MAP[socket_cb -> port] = socket_cb;
 
+
+
 	return 0;
 }
 
@@ -93,7 +95,7 @@ Fid_t sys_Accept(Fid_t lsock)
  	//as long as socket_cb is a LISTENER dont need to check for valid port or if he is bounded to a PORT
 
  	while(rlist_len(&socket_cb->listener.request_queue)==0) // waiting for a request
-		kernel_wait(&socket_cb -> listener.listener_CV,SCHED_PIPE);
+		kernel_wait(&socket_cb -> listener.listener_CV,SCHED_IO); //highest prioority
 
 	//get the request
 
@@ -214,6 +216,9 @@ int sys_Connect(Fid_t sock, port_t port, timeout_t timeout)
 	if(socket_cb -> stype != UNBOUND || PORT_MAP[port] == NULL)
 		return -1;
 
+	if(socket_cb -> port != port) // must be bounded to the same port
+		return -1;
+
 	SOCKET_CB* listener_sock = PORT_MAP[port];
 
 	//create the request...
@@ -228,10 +233,14 @@ int sys_Connect(Fid_t sock, port_t port, timeout_t timeout)
 	// add the new node into the request_queue of listener
 	rlist_push_back(&listener_sock-> listener.request_queue, &request -> node);
 
+	listener_sock -> refcount ++;
+
 	kernel_signal(&listener_sock->listener.listener_CV); //wake up the listener because the request is ready!
 
 	//wait for a spesific time...
-	int success = kernel_timedwait(&request->request_cv, SCHED_USER, timeout);
+	int success = kernel_timedwait(&request->request_cv, SCHED_IO, timeout); //highest priority
+
+	listener_sock ->refcount --;
 
 	rlist_remove(&request -> node);
 
@@ -248,6 +257,30 @@ int sys_Connect(Fid_t sock, port_t port, timeout_t timeout)
 
 int sys_ShutDown(Fid_t sock, shutdown_mode how)
 {
+	FCB* fcb = get_fcb(sock);
+
+	if(fcb == NULL)
+		return -1;
+
+	SOCKET_CB* socket_cb = fcb -> streamobj;
+
+	if (socket_cb -> stype != PEER)
+		return -1;
+	int r_check,w_check;
+	switch (how){
+		case SHUTDOWN_READ:
+			return close_pipe_reader(socket_cb -> peer.client);
+		case SHUTDOWN_WRITE:
+			return close_pipe_writer(socket_cb -> peer.server);
+		case SHUTDOWN_BOTH:
+			r_check = close_pipe_reader(socket_cb -> peer.client);
+			w_check = close_pipe_writer(socket_cb -> peer.server);
+
+			if(w_check== -1 || r_check == -1)
+				return -1;
+			return 0;
+
+	}
 	return -1;
 }
 
@@ -255,6 +288,10 @@ int socket_read(void* read,char*buffer , unsigned int size){
 	SOCKET_CB* socket_cb = (SOCKET_CB*) read;
 
 	if(socket_cb -> stype != PEER)
+		return -1;
+
+	//peer socket may have closed...
+	if(socket_cb -> peer.socket == NULL)
 		return -1;
 
 	int bytes = pipe_read(socket_cb -> peer.client,buffer,size);
@@ -265,6 +302,11 @@ int socket_write(void* write,const char*buffer , unsigned int size){
 
 	if(socket_cb -> stype != PEER)
 		return -1;
+
+	//peer socket may have closed...
+	if(socket_cb -> peer.socket == NULL)
+		return -1;
+
 	int bytes = pipe_write(socket_cb -> peer.server,buffer ,size);
 	return bytes;
 
@@ -274,5 +316,35 @@ int socket_close(void* fid){
 	SOCKET_CB* socket_cb = (SOCKET_CB*) fid;
 	if(socket_cb == NULL)
 		return -1;
-	return -1;
+
+	if (socket_cb -> stype == PEER){
+
+		if(socket_cb -> peer.socket != NULL){
+			//close reader and writer
+			close_pipe_reader(socket_cb -> peer.client);
+			close_pipe_writer(socket_cb -> peer.server);
+			//desconecct the sockets...
+			socket_cb -> peer.socket = NULL ;
+
+		}
+		socket_cb -> stype  = UNBOUND;
+
+		
+	}
+	else if (socket_cb ->stype == LISTENER){
+		
+		while(!is_rlist_empty(&socket_cb->listener.request_queue)){
+			socket_request* request =rlist_pop_front(&socket_cb->listener.request_queue) -> socket_request; 
+			kernel_signal(&request->request_cv); //wake up the request because there is no more listener...
+		}
+		
+		PORT_MAP[socket_cb -> port]= NULL;
+		socket_cb -> stype  = UNBOUND;
+	}
+
+	if (socket_cb -> refcount ==0){
+		free(socket_cb);
+	}
+
+	return 0;
 }
