@@ -1,5 +1,6 @@
 #include "tinyos.h"
 #include "kernel_streams.h"
+#include "kernel_cc.h"
 
 typedef enum socket_type {
 	LISTENER,
@@ -16,11 +17,14 @@ typedef struct Listener_Socket{
   rlnode request_queue; //queue that has the requests for peer to peer connection
 
   CondVar listener_CV;
+
+
 }lsocket;
 
 
 typedef struct Peer_Socket {
 
+  //pointer to the connected socket
   SOCKET_CB* socket;
   
   PIPE_CB* server; //sends data
@@ -31,6 +35,7 @@ typedef struct Peer_Socket {
 
 
 typedef struct socket_control_block{
+	int refcount;
 
 	FCB* fcb;
 	Fid_t fid;
@@ -41,17 +46,20 @@ typedef struct socket_control_block{
 	union {
     	psocket peer; 
     	lsocket listener;
-  };
+  	};
+
 	
 }SOCKET_CB;
 
 
 typedef struct request_connection{
-  SOCKET_CB* socket; //socket that made the request...
+  SOCKET_CB* requesting_socket; //socket that made the request...
 
+  CondVar request_cv;
   
   int admited;
   
+  rlnode node; // the node we add in the request_queue...
   
 } socket_request;
 
@@ -73,3 +81,14 @@ file_ops SOCKET_FOPS={
 	.Close = socket_close
 };
 
+
+static inline void init_port_map(){
+
+      for(int i=0; i<=MAX_PORT+1;i++){
+      	PORT_MAP[i]=NULL;
+    }
+}
+
+
+//just malloc and init the pipe_cb wuth spesific reader and writer dont call FCB_reserve
+PIPE_CB* acquire_PIPE_CB(FCB** fcb,Fid_t* fid);
