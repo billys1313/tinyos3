@@ -1,4 +1,3 @@
-
 #include <assert.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -30,7 +29,6 @@
 
 /*
 	test_boot
-
 	Test that the boot function executes the boot task and returns.
  */
 
@@ -2166,6 +2164,3 @@ int main(int argc, char** argv)
 	register_test(&user_tests);
 	return run_program(argc, argv, &all_tests);
 }
-
-
-

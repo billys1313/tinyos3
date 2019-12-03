@@ -94,6 +94,7 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
 
   PTCB* ptcb= search_ptcb(tid);
 
+
   //if ptcb == null then PTCB doesn't exists! or it is in another process.
   if (ptcb == NULL){
     return -1;

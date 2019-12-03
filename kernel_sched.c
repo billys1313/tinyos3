@@ -3,7 +3,6 @@
 #include <sys/mman.h>
 
 #include "kernel_cc.h"
-#include "kernel_proc.h"
 #include "kernel_sched.h"
 #include "tinyos.h"
 

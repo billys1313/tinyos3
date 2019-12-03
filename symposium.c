@@ -218,7 +218,6 @@ int SymposiumOfThreads(int argl, void* args)
 	Tid_t thread[symp->N];
 	for(int i=0;i<N;i++) {
 		thread[i] = CreateThread(PhilosopherThread, i, &S);
-    
 	}  
 
 	/* Wait for philosophers to exit */  
