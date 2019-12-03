@@ -330,7 +330,8 @@ int socket_close(void* fid){
 		
 	}
 	else if (socket_cb ->stype == LISTENER){
-		
+
+		kernel_broadcast(&socket_cb -> listener.listener_CV);
 		while(!is_rlist_empty(&socket_cb->listener.request_queue)){
 			socket_request* request =rlist_pop_front(&socket_cb->listener.request_queue) -> socket_request; 
 			kernel_signal(&request->request_cv); //wake up the request because there is no more listener...

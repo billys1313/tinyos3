@@ -64,6 +64,9 @@ Tid_t sys_CreateThread(Task task, int argl, void* args)
 
       //spawn_thread create a thread with in INIT state ,so we call wakeup to chnage it to READY!
       wakeup(ptcb->tcb); 
+
+
+
       
       return (Tid_t) ptcb;
 

@@ -1246,7 +1246,6 @@ void connect_sockets(Fid_t sock1, Fid_t lsock, Fid_t* sock2, port_t port)
 		ASSERT(Connect(sock1, port, 1000)==0);
 		return 0;
 	}
-
 	Tid_t t1,t2;
 	t1 = CreateThread(accept_thread, 0, NULL);
 	t2 = CreateThread(connect_thread, 0, NULL);
