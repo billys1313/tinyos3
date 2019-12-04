@@ -93,7 +93,6 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
   
 
   PTCB* ptcb= search_ptcb(tid);
-  fprintf(stderr, "join: %ld\n",tid);
 
   //if ptcb == null then PTCB doesn't exists! or it is in another process.
   if (ptcb == NULL){
@@ -123,7 +122,6 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
 
   //thread is exited here!
   if (ptcb -> refcount == 0 ){ 
-    fprintf(stderr, "join ex: %ld\n",tid);
     rlist_remove(&ptcb->thread_list_node);
     free(ptcb);
 
@@ -174,7 +172,7 @@ void sys_ThreadExit(int exitval)
   }
   
    
-  fprintf(stderr, "ex: %ld\n",sys_ThreadSelf());
+ 
   CURPROC -> thread_count--;          // decrease the threads of curproc
 
   ptcb -> main_task = NULL;
