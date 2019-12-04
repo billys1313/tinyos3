@@ -32,7 +32,7 @@ Fid_t sys_Socket(port_t port)
 	socket_cb -> stype = UNBOUND;
 	socket_cb -> port = port;
 
-	socket_cb -> refcount =0;
+	socket_cb -> refcount =1;
 
 
 	fcb -> streamobj = socket_cb;
@@ -94,8 +94,12 @@ Fid_t sys_Accept(Fid_t lsock)
  		return NOFILE;
  	//as long as socket_cb is a LISTENER dont need to check for valid port or if he is bounded to a PORT
 
+ 	socket_cb -> refcount++;
+
  	while(rlist_len(&socket_cb->listener.request_queue)==0) // waiting for a request
 		kernel_wait(&socket_cb -> listener.listener_CV,SCHED_IO); //highest prioority
+
+	decrease_ref_count(socket_cb);
 
 	//get the request
 
@@ -119,7 +123,6 @@ Fid_t sys_Accept(Fid_t lsock)
 
 	peer1_socket -> stype = PEER;
 	peer2_socket -> stype = PEER;
-
 
 	//we have already Fid_t and FCB* dont want to reserve new ones=> dont call sys_Pipe()
 
@@ -232,14 +235,15 @@ int sys_Connect(Fid_t sock, port_t port, timeout_t timeout)
 	// add the new node into the request_queue of listener
 	rlist_push_back(&listener_sock-> listener.request_queue, &request -> node);
 
-	listener_sock -> refcount ++;
+	
 
 	kernel_signal(&listener_sock->listener.listener_CV); //wake up the listener because the request is ready!
+	listener_sock -> refcount ++;
 
 	//wait for a spesific time...
 	int success = kernel_timedwait(&request->request_cv, SCHED_IO, timeout); //highest priority
 
-	listener_sock ->refcount --;
+	decrease_ref_count(listener_sock);
 
 	rlist_remove(&request -> node);
 
@@ -268,15 +272,23 @@ int sys_ShutDown(Fid_t sock, shutdown_mode how)
 	int r_check,w_check;
 	switch (how){
 		case SHUTDOWN_READ:
-			return close_pipe_reader(socket_cb -> peer.client);
+			r_check= close_pipe_reader(socket_cb -> peer.client);
+			if(r_check==0)
+				socket_cb->peer.client= NULL;
+			return r_check;
 		case SHUTDOWN_WRITE:
-			return close_pipe_writer(socket_cb -> peer.server);
+			w_check= close_pipe_writer(socket_cb -> peer.server);
+			if(w_check==0)
+				socket_cb->peer.server=NULL;
+			return w_check;
 		case SHUTDOWN_BOTH:
 			r_check = close_pipe_reader(socket_cb -> peer.client);
 			w_check = close_pipe_writer(socket_cb -> peer.server);
 
 			if(w_check== -1 || r_check == -1)
 				return -1;
+			socket_cb->peer.server=NULL;
+			socket_cb->peer.client=NULL;
 			return 0;
 
 	}
@@ -316,6 +328,8 @@ int socket_close(void* fid){
 	if(socket_cb == NULL)
 		return -1;
 
+
+
 	if (socket_cb -> stype == PEER){
 
 		if(socket_cb -> peer.socket != NULL){
@@ -330,20 +344,21 @@ int socket_close(void* fid){
 		
 	}
 	else if (socket_cb ->stype == LISTENER){
-
-		kernel_broadcast(&socket_cb -> listener.listener_CV);
-		while(!is_rlist_empty(&socket_cb->listener.request_queue)){
-			socket_request* request =rlist_pop_front(&socket_cb->listener.request_queue) -> socket_request; 
-			kernel_signal(&request->request_cv); //wake up the request because there is no more listener...
-		}
-		
 		PORT_MAP[socket_cb -> port]= NULL;
+		kernel_broadcast(&socket_cb -> listener.listener_CV);
 		
 	}
+	//same for UNBOUND,LISTENER,PEER
 
-	if (socket_cb -> refcount ==0){
-		free(socket_cb);
-	}
+
+	decrease_ref_count(socket_cb);
 
 	return 0;
+}
+
+void decrease_ref_count(SOCKET_CB* socket_cb){
+	socket_cb -> refcount --;
+	if (socket_cb -> refcount ==0)
+		free(socket_cb);
+	
 }

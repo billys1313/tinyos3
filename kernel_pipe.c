@@ -79,6 +79,8 @@ int sys_Pipe(pipe_t* pipe)
 int pipe_read(void* reader,char* buffer,unsigned int size){
 	PIPE_CB* pipe_cb = (PIPE_CB*) reader;
 
+	if( pipe_cb == NULL )
+		return -1;
 	int available_bytes= pipe_cb->written_bytes - pipe_cb->read_bytes;	// available bytes to read
 
 	
@@ -122,6 +124,9 @@ int pipe_read(void* reader,char* buffer,unsigned int size){
 int pipe_write(void* writer,const char* buffer,unsigned int size){
 	PIPE_CB* pipe_cb = (PIPE_CB*) writer;
 
+	if( pipe_cb == NULL )
+		return -1;
+
 	int free_bytes= PIPE_BUFFER_SIZE -(pipe_cb->written_bytes - pipe_cb->read_bytes);	// free space
 
 
@@ -156,6 +161,9 @@ int pipe_write(void* writer,const char* buffer,unsigned int size){
 
 int close_pipe_reader(void* fid){
 	PIPE_CB* pipe_cb = (PIPE_CB*) fid;
+	if (pipe_cb == NULL)
+		return -1;
+	
 
 	pipe_cb -> fcb_r = NULL;
 	pipe_cb  -> reader =-1;
@@ -173,6 +181,9 @@ int close_pipe_reader(void* fid){
 }
 int close_pipe_writer(void* fid){
 	PIPE_CB* pipe_cb = (PIPE_CB*) fid;
+
+	if (pipe_cb == NULL)
+		return -1;
 
 	pipe_cb -> fcb_w = NULL;
 	pipe_cb  ->  writer =-1;

@@ -92,3 +92,6 @@ static inline void init_port_map(){
 
 //just malloc and init the pipe_cb wuth spesific reader and writer dont call FCB_reserve
 PIPE_CB* acquire_PIPE_CB(FCB** fcb,Fid_t* fid);
+
+//decrease and free socket_cb....
+void decrease_ref_count(SOCKET_CB* socket_cb);
