@@ -409,8 +409,7 @@ int procinfo_read(void* read,char*buffer , unsigned int size){
   
   if (proc_cb == NULL)
     return -1;
-  if( proc_cb -> cursor == MAX_PROC-1)
-    return 0;
+ 
 
   //Search the next not free pcb...
   while(proc_cb -> cursor< MAX_PROC && PT[proc_cb -> cursor].pstate == FREE){
