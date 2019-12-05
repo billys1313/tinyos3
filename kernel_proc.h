@@ -14,6 +14,7 @@
 
 #include "tinyos.h"
 #include "kernel_sched.h"
+#include "kernel_streams.h"
 
 /**
   @brief PID state
@@ -132,5 +133,18 @@ typedef struct p_thread_control_block{
 
 
 } PTCB;
+
+int procinfo_read(void* read,char*buffer , unsigned int size);
+int procinfo_write(void* write,const char*buffer , unsigned int size);
+int procinfo_close(void* fid);
+
+
+
+typedef struct procinfo_control_block{
+  procinfo* curinfo;
+  int cursor;
+  
+}procinfo_cb;
+
 
 #endif

@@ -2,7 +2,7 @@
 #include "kernel_socket.h"
 #include "kernel_streams.h"
 
-int socket_counter=0;
+int socket_counter=0; 
 Fid_t sys_Socket(port_t port)
 {	
 	//illegal port...

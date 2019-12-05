@@ -378,9 +378,96 @@ void sys_Exit(int exitval)
   kernel_sleep(EXITED, SCHED_USER);
 }
 
-
+//open info FILE OPS...
+file_ops PROCINFO_FOPS={
+  .Open=NULL,
+  .Read=procinfo_read,
+  .Write=procinfo_write,
+  .Close = procinfo_close
+};
 
 Fid_t sys_OpenInfo()
-{
-  return NOFILE;
+{ 
+  Fid_t fid = -1;
+  FCB* fcb = NULL;
+
+  if (!FCB_reserve(1, &fid, &fcb)) // file ids of curproc are exhausted.
+    return NOFILE;
+
+  procinfo_cb* proc_cb = (procinfo_cb*)xmalloc(sizeof(procinfo_cb));
+
+  proc_cb -> cursor =0;
+
+  fcb -> streamobj = proc_cb;
+  fcb -> streamfunc = &PROCINFO_FOPS;
+  return fid;
+
+}
+
+int procinfo_read(void* read,char*buffer , unsigned int size){
+  procinfo_cb* proc_cb = (procinfo_cb*)read;
+  
+  if (proc_cb == NULL)
+    return -1;
+  if( proc_cb -> cursor == MAX_PROC-1)
+    return 0;
+
+  //Search the next not free pcb...
+  while(proc_cb -> cursor< MAX_PROC && PT[proc_cb -> cursor].pstate == FREE){
+    proc_cb -> cursor ++;
+  }
+  //EOF not other processes...
+  if (proc_cb-> cursor == MAX_PROC)
+    return 0;
+  
+
+  procinfo* cur_info = (procinfo*)xmalloc(sizeof(procinfo));
+
+  //copy the details...
+  cur_info -> pid = get_pid(&PT[proc_cb -> cursor]);
+  cur_info -> ppid = get_pid( PT[proc_cb -> cursor].parent );
+
+  cur_info -> alive = (PT[proc_cb -> cursor].pstate == ZOMBIE) ? 0 : 1;
+
+  cur_info -> thread_count = PT[proc_cb -> cursor].thread_count;
+
+  cur_info -> main_task = PT[proc_cb -> cursor].main_task;
+
+  cur_info -> argl = PT[proc_cb -> cursor].argl;
+
+  //get smaller size...
+  int len = ( PT[proc_cb -> cursor].argl <= PROCINFO_MAX_ARGS_SIZE ) ? PT[proc_cb -> cursor].argl : PROCINFO_MAX_ARGS_SIZE;
+
+  memcpy(cur_info -> args , PT[proc_cb -> cursor].args, len);
+
+  proc_cb -> curinfo = cur_info;
+  //...
+
+  //read the process info into the buffer
+  memcpy (buffer, proc_cb->curinfo ,size);
+
+
+  free(cur_info);
+  proc_cb -> curinfo = NULL;
+  proc_cb -> cursor ++;
+  
+  //we have read size bytes...
+  return size;
+
+  
+}
+
+int procinfo_write(void* write,const char*buffer , unsigned int size){
+  return -1;
+}
+
+int procinfo_close(void* fid){
+  procinfo_cb* proc_cb = (procinfo_cb*)fid;
+
+  if (proc_cb == NULL)
+    return -1;
+
+  free(proc_cb);
+  return 0;
+  
 }
