@@ -421,36 +421,33 @@ int procinfo_read(void* read,char*buffer , unsigned int size){
     return 0;
   
 
-  procinfo* cur_info = (procinfo*)xmalloc(sizeof(procinfo));
+  proc_cb -> curinfo = (procinfo*)xmalloc(sizeof(procinfo));
 
   //copy the details...
-  cur_info -> pid = get_pid(&PT[proc_cb -> cursor]);
-  cur_info -> ppid = get_pid( PT[proc_cb -> cursor].parent );
+  proc_cb -> curinfo -> pid = get_pid(&PT[proc_cb -> cursor]);
+  proc_cb -> curinfo -> ppid = get_pid( PT[proc_cb -> cursor].parent );
 
-  cur_info -> alive = (PT[proc_cb -> cursor].pstate == ZOMBIE) ? 0 : 1;
+  proc_cb -> curinfo -> alive = (PT[proc_cb -> cursor].pstate == ZOMBIE) ? 0 : 1;
 
-  cur_info -> thread_count = PT[proc_cb -> cursor].thread_count;
+  proc_cb -> curinfo -> thread_count = PT[proc_cb -> cursor].thread_count;
 
-  cur_info -> main_task = PT[proc_cb -> cursor].main_task;
+  proc_cb -> curinfo -> main_task = PT[proc_cb -> cursor].main_task;
 
-  cur_info -> argl = PT[proc_cb -> cursor].argl;
+  proc_cb -> curinfo -> argl = PT[proc_cb -> cursor].argl;
 
   //get smaller size...
   int len = ( PT[proc_cb -> cursor].argl <= PROCINFO_MAX_ARGS_SIZE ) ? PT[proc_cb -> cursor].argl : PROCINFO_MAX_ARGS_SIZE;
 
-  memcpy(cur_info -> args , PT[proc_cb -> cursor].args, len);
-
-  proc_cb -> curinfo = cur_info;
+  memcpy(proc_cb -> curinfo -> args , PT[proc_cb -> cursor].args, len);
   //...
 
   //read the process info into the buffer
   memcpy (buffer, proc_cb->curinfo ,size);
 
 
-  free(cur_info);
-  proc_cb -> curinfo = NULL;
+  free(proc_cb -> curinfo);
   proc_cb -> cursor ++;
-  
+
   //we have read size bytes...
   return size;
 
