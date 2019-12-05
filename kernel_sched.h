@@ -1,4 +1,3 @@
- 
 /*
  *  Scheduler API and implementation 
  *

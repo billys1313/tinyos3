@@ -1,4 +1,3 @@
-
 #include <assert.h>
 #include <sys/mman.h>
 
@@ -13,10 +12,8 @@
 /*
    The thread layout.
   --------------------
-
   On the x86 (Pentium) architecture, the stack grows upward. Therefore, we
   can allocate the TCB at the top of the memory block used as the stack.
-
   +-------------+
   |   TCB       |
   +-------------+
@@ -28,11 +25,9 @@
   +-------------+
   | first frame |
   +-------------+
-
   Advantages: (a) unified memory area for stack and TCB (b) stack overrun will
   crash own thread, before it affects other threads (which may make debugging
   easier).
-
   Disadvantages: The stack cannot grow unless we move the whole TCB. Of course,
   we do not support stack growth anyway!
  */
@@ -189,10 +184,8 @@ CCB cctx[MAX_CORES];
 /*
   The scheduler queue is implemented as a doubly linked list. The
   head and tail of this list are stored in  SCHED.
-
   Also, the scheduler contains a linked list of all the sleeping
   threads with a timeout.
-
   Both of these structures are protected by @c sched_spinlock.
 */
 /*EDITS.........*/
@@ -212,7 +205,6 @@ void ici_handler()
 
 /*
   Possibly add TCB to the scheduler timeout list.
-
   *** MUST BE CALLED WITH sched_spinlock HELD ***
 */
 static void sched_register_timeout(TCB* tcb, TimerDuration timeout)
@@ -235,7 +227,6 @@ static void sched_register_timeout(TCB* tcb, TimerDuration timeout)
 
 /*
   Add TCB to the end of the scheduler list.
-
   *** MUST BE CALLED WITH sched_spinlock HELD ***
 */
 static void sched_queue_add(TCB* tcb)
@@ -249,7 +240,6 @@ static void sched_queue_add(TCB* tcb)
 
 /*
 	Adjust the state of a thread to make it READY.
-
 	*** MUST BE CALLED WITH sched_spinlock HELD ***
  */
 static void sched_make_ready(TCB* tcb)
@@ -275,7 +265,6 @@ static void sched_make_ready(TCB* tcb)
 /*
   Scan the \c TIMEOUT_LIST for threads whose timeout has expired, and
   wake them up.
-
   *** MUST BE CALLED WITH sched_spinlock HELD ***
 */
 static void sched_wakeup_expired_timeouts()
@@ -294,7 +283,6 @@ static void sched_wakeup_expired_timeouts()
 /*
   Remove the head of the scheduler list, if any, and
   return it. Return NULL if the list is empty.
-
   *** MUST BE CALLED WITH sched_spinlock HELD ***
 */
 static TCB* sched_queue_select(TCB* current)
@@ -553,7 +541,6 @@ PTCB* spawn_ptcb (PCB* pcb,Task task, int argl, void* args){
   This is done mostly from inside yield().
   However, for threads that are executed for the first time, this
   has to happen in thread_start.
-
   The 'preempt' argument determines whether preemption is turned on
   in the new timeslice. When returning to threads in the non-preemptive
   domain (e.g., waiting at some driver), we need to not turn preemption

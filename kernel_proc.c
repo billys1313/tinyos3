@@ -1,4 +1,3 @@
-
 #include <assert.h>
 #include "kernel_cc.h"
 #include "kernel_proc.h"
@@ -11,7 +10,6 @@
  - WaitPid
  - GetPid
  - GetPPid
-
  */
 
 /* The process table */
@@ -386,4 +384,3 @@ Fid_t sys_OpenInfo()
 {
   return NOFILE;
 }
-

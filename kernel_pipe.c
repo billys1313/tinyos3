@@ -1,4 +1,3 @@
-
 #include "tinyos.h"
 #include "kernel_dev.h"
 #include "kernel_streams.h"
@@ -24,10 +23,8 @@ file_ops pipe_reader_stream_func ={
 Returns by reference pipe_t
 pipe-> read will be the Fid_t (file file descriptor) to the reader FCB
 Reader FCB will have stream_func-> pipe_reader_stream_func
-
 pipe-> write will be the Fid_t (file file descriptor) to the writer FCB
 Writer FCB will have stream_func-> pipe_writer_stream_func
-
 Both FCB's will have streamobj->PIPE_CB
 */
 

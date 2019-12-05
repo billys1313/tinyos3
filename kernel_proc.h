@@ -4,14 +4,11 @@
 /**
   @file kernel_proc.h
   @brief The process table and process management.
-
   @defgroup proc Processes
   @ingroup kernel
   @brief The process table and process management.
-
   This file defines the PCB structure and basic helpers for
   process access.
-
   @{
 */ 
 
@@ -20,7 +17,6 @@
 
 /**
   @brief PID state
-
   A PID can be either free (no process is using it), ALIVE (some running process is
   using it), or ZOMBIE (a zombie process is using it).
   */
@@ -32,7 +28,6 @@ typedef enum pid_state_e {
 
 /**
   @brief Process Control Block.
-
   This structure holds all information pertaining to a process.
  */
 typedef struct process_control_block {
@@ -58,7 +53,6 @@ typedef struct process_control_block {
   rlnode exited_node;     /**< @brief Intrusive node for @c exited_list */
 
   CondVar child_exit;     /**< @brief Condition variable for @c WaitChild. 
-
                              This condition variable is  broadcast each time a child
                              process terminates. It is used in the implementation of
                              @c WaitChild() */
@@ -70,7 +64,6 @@ typedef struct process_control_block {
 
 /**
   @brief Initialize the process table.
-
   This function is called during kernel initialization, to initialize
   any data structures related to process creation.
 */
@@ -78,11 +71,9 @@ void initialize_processes();
 
 /**
   @brief Get the PCB for a PID.
-
   This function will return a pointer to the PCB of 
   the process with a given PID. If the PID does not
   correspond to a process, the function returns @c NULL.
-
   @param pid the pid of the process 
   @returns A pointer to the PCB of the process, or NULL.
 */
@@ -90,11 +81,9 @@ PCB* get_pcb(Pid_t pid);
 
 /**
   @brief Get the PID of a PCB.
-
   This function will return the PID of the process 
   whose PCB is pointed at by @c pcb. If the pcb does not
   correspond to a process, the function returns @c NOPROC.
-
   @param pcb the pcb of the process 
   @returns the PID of the process, or NOPROC.
 */

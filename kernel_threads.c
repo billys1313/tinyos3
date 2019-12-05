@@ -1,4 +1,3 @@
-
 #include "tinyos.h"
 #include "kernel_sched.h"
 #include "kernel_proc.h"
@@ -201,5 +200,3 @@ void sys_ThreadExit(int exitval)
   
 
 }
-
-
