@@ -511,7 +511,7 @@ PTCB* spawn_ptcb (PCB* pcb,Task task, int argl, void* args){
     PTCB* ptcb = (PTCB*) xmalloc(sizeof(PTCB));           // if it fails terminates the program!
     rlnode_init(& ptcb->thread_list_node, ptcb);          // initialize the node 
 
-    ptcb -> refcount=0;                                   //no joins yet
+    ptcb -> refcount=1;                                   //no joins yet
     rlist_push_back(& pcb->thread_list, & ptcb->thread_list_node);  //add ptcb to pcb list of ptcbs
     	
     ptcb -> main_task=task;

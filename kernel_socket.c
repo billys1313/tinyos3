@@ -97,8 +97,6 @@ Fid_t sys_Accept(Fid_t lsock)
  	while(rlist_len(&socket_cb->listener.request_queue)==0) // waiting for a request
 		kernel_wait(&socket_cb -> listener.listener_CV,SCHED_IO); //highest prioority
 
-	decrease_ref_count(socket_cb);
-
 	//get the request
 
 	socket_request* request= rlist_pop_front(&socket_cb->listener.request_queue) -> socket_request ;
@@ -170,7 +168,7 @@ Fid_t sys_Accept(Fid_t lsock)
 	request -> admited = 1;
 
 	kernel_signal(&request -> request_cv);
-
+	decrease_ref_count(socket_cb);
 
 
 	return peer2_socket -> fid;
@@ -217,8 +215,6 @@ int sys_Connect(Fid_t sock, port_t port, timeout_t timeout)
 	if(socket_cb -> stype != UNBOUND || PORT_MAP[port] == NULL)
 		return -1;
 
-	
-
 	SOCKET_CB* listener_sock = PORT_MAP[port];
 
 	//create the request...
@@ -237,17 +233,16 @@ int sys_Connect(Fid_t sock, port_t port, timeout_t timeout)
 
 	kernel_signal(&listener_sock->listener.listener_CV); //wake up the listener because the request is ready!
 	listener_sock -> refcount ++;
+	while(!request -> admited){
+		//wait for a spesific time...
+		int success = kernel_timedwait(&request->request_cv, SCHED_IO, timeout); //highest priority
+		if(!success) //time out!
+			break;
 
-	//wait for a spesific time...
-	int success = kernel_timedwait(&request->request_cv, SCHED_IO, timeout); //highest priority
+	}
 
 	decrease_ref_count(listener_sock);
-
-	rlist_remove(&request -> node);
-
-	if(!success) //time out!
-		return -1;
-
+	
 	if(!request -> admited) //request wasnt accepted
 		return -1;
 
@@ -347,7 +342,6 @@ int socket_close(void* fid){
 		
 	}
 	//same for UNBOUND,LISTENER,PEER
-
 
 	decrease_ref_count(socket_cb);
 

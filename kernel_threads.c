@@ -96,9 +96,9 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
   //if ptcb == null then PTCB doesn't exists! or it is in another process.
   if (ptcb == NULL){
     return -1;
-  }     
+  }      
   //can't join
-  if(ptcb -> is_exited == EXITED_STATE || ptcb -> is_detached == DETACH || (Tid_t)CURTHREAD == tid  ){
+  if((Tid_t)CURTHREAD == tid  ){
     return -1 ;
   }
 
@@ -127,8 +127,6 @@ int sys_ThreadJoin(Tid_t tid, int* exitval)
   }
 
   
-
-
   return 0;
 }
 
@@ -169,7 +167,6 @@ void sys_ThreadExit(int exitval)
 
     return ; 
   }
-  
    
  
   CURPROC -> thread_count--;          // decrease the threads of curproc

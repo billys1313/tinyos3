@@ -354,11 +354,19 @@ void sys_Exit(int exitval)
 
 
   curproc->thread_count--;          // decrease the threads of curproc
+  ptcb -> refcount --;
   ptcb -> main_task = NULL;
   ptcb -> exit_val = exitval;
   ptcb -> is_exited = EXITED_STATE;
   curproc->exitval = exitval;
   kernel_broadcast(&ptcb -> cond_var); // let all the threads know that the CURTHREAD is EXITED
+
+  //edits
+  if (ptcb -> refcount == 0 ){ 
+    rlist_remove(&ptcb->thread_list_node);
+    free(ptcb);
+
+  }
 
   if (  curproc -> thread_count == 0){  // clean PCB if there aren't any other threads! Like sys_Exit
    
@@ -366,12 +374,7 @@ void sys_Exit(int exitval)
     
   }
   
-  //edits
-  if (ptcb -> refcount == 0 ){ 
-    rlist_remove(&ptcb->thread_list_node);
-    free(ptcb);
-
-  }
+  
 
 
   /* Bye-bye cruel world */
