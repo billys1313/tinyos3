@@ -94,8 +94,12 @@ Fid_t sys_Accept(Fid_t lsock)
 
  	socket_cb -> refcount++;
 
- 	while(rlist_len(&socket_cb->listener.request_queue)==0) // waiting for a request
+ 	while(rlist_len(&socket_cb->listener.request_queue)==0){ // waiting for a request
+ 		if(PORT_MAP[socket_cb -> port] == NULL )//listener doesn't exist anymore...
+ 			return NOFILE;
+
 		kernel_wait(&socket_cb -> listener.listener_CV,SCHED_IO); //highest prioority
+	}
 
 	//get the request
 

@@ -1474,7 +1474,7 @@ BOOT_TEST(test_accept_unblocks_on_close,
 	Tid_t t = CreateThread(accept_connection, 0, NULL);
 
 	/* Here, we just wait some time, (of course, this is technically a race condition :-( */
-	fibo(10);
+	fibo(30);
 	Close(lsock);
 
 	ThreadJoin(t,NULL);
